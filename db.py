@@ -562,140 +562,19 @@ def get_lesson_progress(enrolment_id, lesson_id):
         connection.close()
 
 # ------------------------------------------------------ QUIZQUESTION ----------------------------------------------------------- #
+
+# CREATE  
+
+# READ
+
+# UPDATE
+
+# DELETE
+
 # ------------------------------------------------------ QUIZOPTION ----------------------------------------------------------- #
 # ------------------------------------------------------ QUIZATTEMPT ----------------------------------------------------------- #
 # -------------------------------------------------------REWARD ----------------------------------------------------------- #
 # ------------------------------------------------------ USERREWARD ---------------------------------------------------------- #
 
-# ------------------------------------------------ TESTING ------------------------------------------------ #
+# IN PROGRESS
 
-initialise_database()
-
-# ------------------------------------------------ SETUP ------------------------------------------------ #
-
-# Use an existing user in the database
-user_id = 1
-
-if get_user(user_id) is None:
-    raise ValueError("Test user does not exist")
-
-# Create the course needed for our tests
-course_id = create_course(
-    "Lesson and Enrolment Test",
-    "Testing database relationships",
-    "30 minutes",
-    100
-)
-
-print("Course created:", course_id)
-
-
-# ------------------------------------------------ LESSON CRUD ------------------------------------------------ #
-
-# CREATE
-lesson_id = create_lesson(
-    course_id,
-    "Introduction",
-    "Testing lesson content",
-    1
-)
-
-print("Lesson created:", lesson_id)
-
-# READ
-lesson = get_lesson(lesson_id)
-print("Lesson retrieved:", isinstance(lesson, Lesson))
-
-# UPDATE
-updated = update_lesson(
-    lesson_id,
-    course_id,
-    "Updated Introduction",
-    "Updated lesson content",
-    1
-)
-
-print("Lesson updated:", updated)
-
-
-# ------------------------------------------------ ENROLMENT CRUD ------------------------------------------------ #
-
-# CREATE
-enrolment_id = create_enrolment(
-    user_id,
-    course_id,
-    None,
-    "2026-12-01",
-    "Assigned",
-    0,
-    None
-)
-
-print("Enrolment created:", enrolment_id)
-
-# READ
-enrolment = get_enrolment(enrolment_id)
-print("Enrolment retrieved:", isinstance(enrolment, Enrolment))
-
-# UPDATE
-updated = update_enrolment(
-    enrolment_id,
-    "2026-12-05",
-    "Complete",
-    100,
-    "2026-11-03"
-)
-
-print("Enrolment updated:", updated)
-
-# VERIFY UPDATE
-enrolment = get_enrolment(enrolment_id)
-
-print("Enrolment completed:", enrolment.is_completed())
-print("Progress percentage:", enrolment.progress_percent)
-
-
-# ------------------------------------------------ LESSON PROGRESS ------------------------------------------------ #
-
-# CREATE
-result = create_lesson_progress(
-    enrolment_id,
-    lesson_id,
-    date.today().isoformat()
-)
-
-print("Lesson progress created:", result)
-
-# READ
-progress = get_lesson_progress(enrolment_id, lesson_id)
-
-print("Lesson progress retrieved:", isinstance(progress, LessonProgress))
-
-# CHECK NON-EXISTENT RECORD
-missing = get_lesson_progress(-1, -1)
-
-print("Missing lesson progress:", missing is None)
-
-
-# ------------------------------------------------ CLEAN UP ------------------------------------------------ #
-
-# Delete lesson progress FIRST because it references
-# both the enrolment and lesson.
-
-connection = get_connection()
-
-try:
-    connection.execute("""
-        DELETE FROM lessonprogress
-        WHERE enrolment_id = ? AND lesson_id = ?
-    """, (enrolment_id, lesson_id))
-
-    connection.commit()
-
-finally:
-    connection.close()
-
-# Now delete the parent records
-print("Enrolment deleted:", delete_enrolment(enrolment_id))
-print("Lesson deleted:", delete_lesson(lesson_id))
-print("Course deleted:", delete_course(course_id))

@@ -1,6 +1,10 @@
 import tkinter as tk
+from db import initialise_database
+
+
 
 def main(): # create main app window
+    initialise_database() # creates database when app is run
     root = tk.Tk()
     root.title("Lock IT Down")
     root.geometry("1000x650")

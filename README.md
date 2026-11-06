@@ -19,6 +19,7 @@ PROJECT STRUCTURE
 
 RUNNING THE APP 
 run from "main.py" which should take you to a temp tkinter window for now. 
+running the app for the first time will create a new database for you. You might need to create your own data if testing anything
 
 
 DEV WORKFLOW
