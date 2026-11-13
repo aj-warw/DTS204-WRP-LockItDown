@@ -1,5 +1,5 @@
 import sqlite3
-from models import User, Course, Lesson, Enrolment, LessonProgress
+from models import User, Course, Lesson, Enrolment, LessonProgress, QuizQuestion, QuizOption, QuizAttempt, UserReward, Reward
 from datetime import date
 
 # opens a new connection and enforce foreign keys
@@ -523,17 +523,18 @@ def create_lesson_progress(enrolment_id, lesson_id, completed_at):
     connection = get_connection() # create a connection just for this function
 
     try: 
-        cursor = connection.execute("""
+        connection.execute("""
             INSERT into lessonprogress (enrolment_id, lesson_id, completed_at)
             VALUES(?, ?, ?)
         """, (enrolment_id, lesson_id, completed_at))
     
         connection.commit() 
 
-        return enrolment_id, lesson_id
+        return enrolment_id, lesson_id # 
 
     finally: 
         connection.close()
+
 
 # READ 
 
@@ -549,7 +550,7 @@ def get_lesson_progress(enrolment_id, lesson_id):
 
         returned = cursor.fetchone()
 
-        if returned is None: 
+        if returned is None:  # if nothing is found using the enrolment id and lesson id pair just return nothing
             return None
 
         return LessonProgress( 
@@ -564,17 +565,333 @@ def get_lesson_progress(enrolment_id, lesson_id):
 # ------------------------------------------------------ QUIZQUESTION ----------------------------------------------------------- #
 
 # CREATE  
+def create_quiz_question(course_id, question_text):
+    connection = get_connection()
+
+    try: 
+        cursor = connection.execute("""
+            INSERT INTO quizquestion(course_id, question_text)
+            VALUES (?, ?)
+        """, (course_id, question_text))
+
+        connection.commit()
+        return cursor.lastrowid
+
+    finally: 
+        connection.close()
 
 # READ
+def get_quiz_question(question_id):
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute("""
+            SELECT question_id, course_id, question_text
+            FROM quizquestion 
+            WHERE question_id = ?
+        """, (question_id, ))
+
+        returned = cursor.fetchone()
+
+        if returned is None: # if nothing is found using question id return none
+            return None
+
+        return QuizQuestion(
+            question_id = returned[0],
+            course_id = returned[1], 
+            question_text = returned[2]
+        )
+
+    finally: 
+        connection.close()
 
 # UPDATE
 
+def update_quiz_question(question_id, course_id, question_text):
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute("""
+            UPDATE quizquestion
+            SET question_text = ?
+            WHERE question_id = ? AND course_id = ?
+        """, (question_text, question_id, course_id))
+
+        connection.commit()
+        return cursor.rowcount > 0
+
+    finally: 
+        connection.close()
+
 # DELETE
+def delete_quiz_question(question_id, course_id):
+    connection = get_connection()
+
+    try: 
+        cursor = connection.execute("""
+            DELETE FROM quizquestion
+            WHERE question_id = ? AND course_id = ?
+        """, (question_id, course_id ))
+
+        connection.commit()
+        return cursor.rowcount > 0 # check if the SQL update has worked, rowcount will be "1" if it worked and "0" if not. 1 = true 0 = false. 
+
+    finally:
+        connection.close()
 
 # ------------------------------------------------------ QUIZOPTION ----------------------------------------------------------- #
+
+# CREATE
+
+def create_quiz_option(question_id, option_text, is_correct): 
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute("""
+            INSERT INTO quizoption(question_id, option_text, is_correct)
+            VALUES(?, ?, ?)
+        """, (question_id, option_text, is_correct))
+
+        connection.commit()
+        return cursor.lastrowid
+
+    finally: 
+        connection.close()
+
+# READ 
+
+def get_quiz_option(option_id, question_id): 
+    connection = get_connection()
+
+    try: 
+        cursor = connection.execute("""
+            SELECT option_id, question_id, option_text, is_correct
+            FROM quizoption
+            WHERE option_id = ? AND question_id = ?
+        """, (option_id, question_id))
+
+        returned = cursor.fetchone()
+
+        if returned == None: 
+            return None
+
+        return QuizOption(
+            option_id = returned[0],
+            question_id = returned[1], 
+            option_text = returned[2],
+            is_correct = bool(returned[3])
+        )
+
+    finally: 
+        connection.close()
+    
+
+# UPDATE
+
+def update_quiz_option(option_id, question_id, option_text, is_correct):
+    connection = get_connection()
+
+    try: 
+        cursor = connection.execute("""
+            UPDATE quizoption
+            SET question_id = ?, option_text = ?, is_correct = ?
+            WHERE option_id = ? 
+        """, (question_id, option_text, is_correct, option_id))
+
+        connection.commit()
+        return cursor.rowcount > 0 # check how many lines in the database that "cursor" has effected letting us know the function has worked
+
+    finally: 
+        connection.close()
+
+# DELETE
+
+def delete_quiz_option(option_id):
+    connection = get_connection() 
+
+    try: 
+        cursor = connection.execute("""
+            DELETE FROM quizoption 
+            WHERE option_id = ?
+        """, (option_id, ))
+
+        connection.commit()
+        return cursor.rowcount > 0 # return a bool that lets us konw the func worked properly
+
+    finally: 
+        connection.close()
+
 # ------------------------------------------------------ QUIZATTEMPT ----------------------------------------------------------- #
-# -------------------------------------------------------REWARD ----------------------------------------------------------- #
+
+# CREATE 
+
+def create_quiz_attempt(enrolment_id, score, total, percent, result, attempted):
+    connection = get_connection() 
+
+    try:
+        cursor = connection.execute("""
+            INSERT INTO quizattempt(enrolment_id, score, total, percent, result, attempted)
+            VALUES (?, ?, ?, ?, ?, ?)   
+        """, (enrolment_id, score, total, percent, result, attempted))
+
+        connection.commit()
+        return cursor.lastrowid
+
+    finally: 
+        connection.close()
+
+# READ 
+
+def get_quiz_attempt(quiz_attempt_id):
+    connection = get_connection()
+
+    try: 
+        cursor = connection.execute("""
+            SELECT enrolment_id, score, total, percent, result, attempted
+            FROM quizattempt
+            WHERE quiz_attempt_id = ?
+        """, (quiz_attempt_id, ))
+
+        returned = cursor.fetchone()
+
+        if returned == None: 
+            return None
+
+        return QuizAttempt(
+            quiz_attempt_id = returned[0],
+            enrolment_id = returned[1], 
+            score = returned[2],
+            total = returned[3],
+            percent = returned[4],
+            result = returned[5],
+            attempted  = returned[6],
+        )
+
+    finally: 
+        connection.close()
+
+# ------------------------------------------------------- REWARD ----------------------------------------------------------- #
+
+# CREATE 
+
+def create_reward(badge_name, points_required):
+    connection = get_connection()
+
+
+    try:
+        cursor = connection.execute("""
+            INSERT INTO reward(badge_name, points_required)
+            VALUES(?, ?)
+        """, (badge_name, points_required))
+
+        connection.commit()
+        return cursor.lastrowid
+
+    finally: 
+        connection.close()
+
+# READ
+
+def get_reward(reward_id):
+    connection = get_connection()
+
+    try: 
+        cursor = connection.execute("""
+            SELECT reward_id, badge_name, points_required
+            FROM reward
+            WHERE reward_id = ?
+        """, (reward_id, ))
+
+        returned = cursor.fetchone()
+
+        if returned == None: 
+            return None
+
+        return Reward(
+            reward_id = returned[0],
+            badge_name = returned[1],
+            points_required = returned[2]
+        )
+
+    finally: 
+        connection.close()
+
+# UPDATE 
+
+def update_reward(reward_id, badge_name, points_required):
+    connection = get_connection()
+
+    try: 
+        cursor = connection.execute("""
+            UPDATE reward
+            SET badge_name = ?, points_required = ?
+            WHERE reward_id = ?
+        """, (badge_name, points_required, reward_id))
+
+        connection.commit()
+        return cursor.rowcount > 0
+
+    finally:
+        connection.close()
+    
+# DELETE
+
+def delete_reward(reward_id):
+    connection = get_connection()
+
+    try: 
+        cursor = connection.execute("""
+            DELETE FROM reward
+            WHERE reward_id = ?
+        """, (reward_id, ))
+
+        connection.commit()
+        return cursor.rowcount
+
+    finally:
+        connection.close()
+
 # ------------------------------------------------------ USERREWARD ---------------------------------------------------------- #
+
+# CREATE 
+
+def create_userreward(user_id, reward_id, earned_at):
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute("""
+            INSERT INTO userreward(user_id, reward_id, earned_at)
+            VALUES(?, ?, ?)
+        """, (user_id, reward_id, earned_at))
+
+        connection.commit()
+        return cursor.lastrowid
+
+    finally:
+        connection.close()
+
+# READ 
+
+def get_userreward(user_id, reward_id):
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute("""
+            SELECT user_id, reward_id, earned_at
+            FROM userreward
+            WHERE user_id = ?, reward_id = ?
+        """, (user_id, reward_id))
+
+        returned = cursor.fetchone()
+
+        return UserReward(
+            user_id = returned[0],
+            reward_id = returned[1],
+            earned_at = returned[2]
+        )
+
+    finally: 
+        connection.close()
 
 # IN PROGRESS
 
