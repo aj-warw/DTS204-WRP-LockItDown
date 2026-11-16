@@ -17,8 +17,6 @@ class User:
     # ---------------------- USER METHODS ------------------ #
     def is_active(self):
         return bool(self.__active) # checks the active attribute to check if a user is active and returns true or false
-
-    def get_user_by_email(self, email):
         
 
     # keeping properties private and making them read only
@@ -26,6 +24,10 @@ class User:
     @property
     def user_id(self):
         return self.__user_id
+
+    @property
+    def name(self): 
+        return self.__name
 
     @property
     def email(self): 

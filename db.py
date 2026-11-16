@@ -255,6 +255,58 @@ def deactivate_user(user_id): # select a user and deactive
     finally:
         connection.close()
 
+
+# get user by email
+
+def get_user_by_email(email): 
+    connection = get_connection()
+    
+    try: 
+        cursor = connection.execute("""
+            SELECT user_id, name, email, role, manager_id, password_hash, salt, must_change, active
+            FROM User 
+            WHERE email = ?   
+        """,
+        (email,)
+        )
+        returned = cursor.fetchone() 
+    
+        if returned is None:
+            return None
+    
+        return User(
+            user_id = returned[0],
+            name = returned[1],
+            email = returned[2],
+            role = returned[3],
+            manager_id = returned[4],
+            password_hash = returned[5],
+            salt = returned[6],
+            must_change = bool(returned[7]),
+            active = bool(returned[8]),
+            )
+    finally:
+        connection.close()
+
+# update user password
+
+def update_user_password(user_id, password_hash, salt, must_change=False): # select a user using user id and UPDATE
+    connection = get_connection()
+
+    try: 
+        cursor = connection.execute("""
+            UPDATE user
+            SET password_hash = ?, salt = ?, must_change = ?
+            WHERE user_id = ?
+        """, (password_hash, salt, must_change, user_id))
+
+        connection.commit()
+
+        return cursor.rowcount > 0 # check if the SQL update has worked, rowcount will be "1" if it worked and "0" if not. 1 = true 0 = false. 
+
+    finally: 
+        connection.close()
+
 # ------------------------------------------------------ COURSE ----------------------------------------------------------- #
 
 # CREATE
@@ -747,7 +799,7 @@ def get_quiz_attempt(quiz_attempt_id):
 
     try: 
         cursor = connection.execute("""
-            SELECT enrolment_id, score, total, percent, result, attempted
+            SELECT quiz_attempt_id, enrolment_id, score, total, percent, result, attempted
             FROM quizattempt
             WHERE quiz_attempt_id = ?
         """, (quiz_attempt_id, ))
@@ -846,7 +898,7 @@ def delete_reward(reward_id):
         """, (reward_id, ))
 
         connection.commit()
-        return cursor.rowcount
+        return cursor.rowcount > 0
 
     finally:
         connection.close()
@@ -859,13 +911,13 @@ def create_userreward(user_id, reward_id, earned_at):
     connection = get_connection()
 
     try:
-        cursor = connection.execute("""
+        connection.execute("""
             INSERT INTO userreward(user_id, reward_id, earned_at)
             VALUES(?, ?, ?)
         """, (user_id, reward_id, earned_at))
 
         connection.commit()
-        return cursor.lastrowid
+        return user_id, reward_id # composite primary key
 
     finally:
         connection.close()
@@ -879,10 +931,13 @@ def get_userreward(user_id, reward_id):
         cursor = connection.execute("""
             SELECT user_id, reward_id, earned_at
             FROM userreward
-            WHERE user_id = ?, reward_id = ?
+            WHERE user_id = ? AND reward_id = ?
         """, (user_id, reward_id))
 
         returned = cursor.fetchone()
+
+        if returned is None: 
+            return None
 
         return UserReward(
             user_id = returned[0],
