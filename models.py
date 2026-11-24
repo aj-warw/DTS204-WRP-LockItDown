@@ -70,10 +70,38 @@ class User:
 
     # ---------------------- USER METHODS ------------------ #
     def is_active(self):
-        return bool(self.__active)
+        return bool(self.__active) # checks the active attribute to check if a user is active and returns true or false
+        
 
-    def is_locked(self):
-        return bool(self.__account_locked)
+    # keeping properties private and making them read only
+
+    @property
+    def user_id(self):
+        return self.__user_id
+
+    @property
+    def name(self): 
+        return self.__name
+
+    @property
+    def email(self): 
+        return self.__email
+
+    @property
+    def role(self):
+        return self.__role
+
+    @property
+    def password_hash(self): 
+        return self.__password_hash
+
+    @property
+    def salt(self): 
+        return self.__salt
+
+    @property
+    def must_change(self): 
+        return self.__must_change
 
 # -------------------------------------------------------- COURSE ----------------------------------------------------- #
 class Course: 
