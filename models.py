@@ -1,9 +1,22 @@
 from datetime import date
 
 # -------------------------------------------------------- USER ----------------------------------------------------- #
-class User: 
+class User:
     # ---------------------- USER ATTRIBUTES ------------------ #
-    def __init__(self, user_id, name, email, role, manager_id, password_hash, salt, must_change, active):
+    def __init__(
+        self,
+        user_id,
+        name,
+        email,
+        role,
+        manager_id,
+        password_hash,
+        salt,
+        must_change,
+        active,
+        failed_login_attempts=0,
+        account_locked=False
+    ):
         self.__user_id = user_id
         self.__name = name
         self.__email = email
@@ -13,6 +26,47 @@ class User:
         self.__salt = salt
         self.__must_change = must_change
         self.__active = active
+        self.__failed_login_attempts = failed_login_attempts
+        self.__account_locked = account_locked
+
+    # adding read only properties so other files can access the required information
+    # without directly changing the private attributes
+
+    @property
+    def user_id(self):
+        return self.__user_id
+
+    @property
+    def name(self):
+        return self.__name
+
+    @property
+    def email(self):
+        return self.__email
+
+    @property
+    def role(self):
+        return self.__role
+
+    @property
+    def manager_id(self):
+        return self.__manager_id
+
+    @property
+    def password_hash(self):
+        return self.__password_hash
+
+    @property
+    def salt(self):
+        return self.__salt
+
+    @property
+    def must_change(self):
+        return bool(self.__must_change)
+
+    @property
+    def failed_login_attempts(self):
+        return self.__failed_login_attempts
 
     # ---------------------- USER METHODS ------------------ #
     def is_active(self):
@@ -243,7 +297,75 @@ class UserReward:
 
     # ---------------------- USERREWARD METHODS ------------------ #
         
+# -------------------------------------------------------- AUDITLOG ----------------------------------------------------- #
+class AuditLog:
+    # ---------------------- AUDITLOG ATTRIBUTES ------------------ #
+    def __init__(self, log_id, user_id, action, description, created_at):
+        self.__log_id = log_id
+        self.__user_id = user_id
+        self.__action = action
+        self.__description = description
+        self.__created_at = created_at
 
+    @property
+    def log_id(self):
+        return self.__log_id
+
+    @property
+    def user_id(self):
+        return self.__user_id
+
+    @property
+    def action(self):
+        return self.__action
+
+    @property
+    def description(self):
+        return self.__description
+
+    @property
+    def created_at(self):
+        return self.__created_at
+
+
+# -------------------------------------------------------- TEAM PROGRESS ----------------------------------------------------- #
+class TeamProgress:
+    # ---------------------- TEAMPROGRESS ATTRIBUTES ------------------ #
+    def __init__(self, user_id, employee_name, assigned_courses, completed_courses, overdue_courses):
+        self.__user_id = user_id
+        self.__employee_name = employee_name
+        self.__assigned_courses = assigned_courses
+        self.__completed_courses = completed_courses
+        self.__overdue_courses = overdue_courses
+
+    @property
+    def user_id(self):
+        return self.__user_id
+
+    @property
+    def employee_name(self):
+        return self.__employee_name
+
+    @property
+    def assigned_courses(self):
+        return self.__assigned_courses
+
+    @property
+    def completed_courses(self):
+        return self.__completed_courses
+
+    @property
+    def overdue_courses(self):
+        return self.__overdue_courses
+
+    def calculate_completion_percentage(self):
+
+        if self.__assigned_courses <= 0:
+            return 0
+
+        return round(
+            (self.__completed_courses / self.__assigned_courses) * 100
+        )
 
 
 
